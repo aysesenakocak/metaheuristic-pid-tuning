@@ -118,34 +118,40 @@ The search space is explored using MATLAB's Global Optimization Toolbox routine 
 
                                      Best            Mean     Stall
     Iteration     f-count            f(x)            f(x)    Iterations
-        0              15           1.003           5.713        0
-        1              30          0.2236           8.525        0
-        2              45          0.1247           6.579        0
-        3              60         0.06201          0.9886        0
-        4              75         0.06201          0.8641        1
-        5              90         0.06201          0.9265        2
-        6             105         0.05619           8.219        0
-        7             120         0.05619           5.465        1
-        8             135         0.05252           2.184        0
-        9             150         0.04142           5.883        0
-       10             165         0.04142           1.575        1
-       11             180         0.02962           8.625        0
-       12             195         0.02962           2.897        1
-       ...
-       20             315         0.02962          0.2496        9
+        0              15           0.334           8.582        0
+        1              30           0.334           15.44        0
+        2              45          0.1285           7.535        0
+        3              60          0.1285           1.208        1
+        4              75          0.1182          0.6275        0
+        5              90          0.1182           1.019        1
+        6             105         0.07835            2.31        0
+        7             120         0.07835           1.291        1
+        8             135         0.04732          0.5808        0
+        9             150         0.04732           4.297        1
+       10             165         0.04732            2.45        2
+       11             180         0.04732           2.847        3
+       12             195         0.04732           4.435        4
+       13             210         0.04732           2.876        5
+       14             225         0.04732           4.388        6
+       15             240         0.04732           3.584        7
+       16             255         0.04685          0.3424        0
+       17             270         0.04015          0.1653        0
+       18             285         0.03901           1.491        0
+       19             300         0.03514          0.1005        0
+       20             315         0.03233          0.0772        0
     Optimization ended: number of iterations exceeded OPTIONS.MaxIterations.
 
 ### Optimal Controller Parameters:
 
-- **Proportional Gain ($K_p$):** `203.7924`
-- **Integral Gain ($K_i$):** `46.6451`
-- **Derivative Gain ($K_d$):** `9.9838`
-- **Minimum Cost ($J_{min}$):** `0.0296`
+- **Proportional Gain ($K_p$):** `209.5835`
+- **Integral Gain ($K_i$):** `45.7985`
+- **Derivative Gain ($K_d$):** `9.8254`
+- **Minimum Cost ($J_{min}$):** `0.0323`
 
 ### Performance Observations:
 
 - **Zero Overshoot ($M_p = 0\%$):** Suppressed by the overshoot penalty term ($50 \cdot M_p$).
-- **Eliminated Steady-State Error:** Convergence of $K_i \approx 46.65$ eliminates DC offset.
+- **Eliminated Steady-State Error:** Convergence of $K_i \approx 45.80$ eliminates DC offset.
 - **Rapid Settling:** Reaches setpoint in under 0.5 seconds without exceeding saturation limits.
 
 ---
@@ -180,4 +186,3 @@ The search space is explored using MATLAB's Global Optimization Toolbox routine 
 
 - Messner, W., Tilbury, D., et al. *"Control Tutorials for MATLAB & Simulink (CTMS) - DC Motor Speed: Simulink Controller Design"*, University of Michigan & Carnegie Mellon University.  
   Available at: https://ctms.engin.umich.edu/CTMS/index.php?example=MotorSpeed&section=SimulinkControl
-
