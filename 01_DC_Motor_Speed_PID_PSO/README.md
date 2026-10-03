@@ -54,7 +54,7 @@ The closed-loop simulation model (`dc_motor_model_cost.slx`) implements continuo
 
 ```
 
-> *(Optional visual)*: Place a screenshot of your Simulink model inside `docs/simulink_model.png` to render it below.
+ `docs/simulink_model.png` 
 
 ### Constituent Blocks & Functional Mechanics:
 
@@ -192,7 +192,7 @@ Optimization ended: number of iterations exceeded OPTIONS.MaxIterations.
 
 ## 📊 Velocity Response Plot
 
-> *(Optional visual)*: Save the generated response plot as `docs/response_curve.png` to display it here.
+ `docs/response_curve.png` 
 
 ## 📂 File Manifest
 
