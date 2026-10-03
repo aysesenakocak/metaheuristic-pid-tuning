@@ -1,210 +1,156 @@
-01: DC Motor Velocity Control via PSO-Tuned PID
+# 01: DC Motor Velocity Control via PSO-Tuned PID
 
 This benchmark demonstrates the automated tuning of a parallel-form PID controller for an armature-controlled DC motor subjected to actuator saturation ($\pm 24\text{ V}$) using Particle Swarm Optimization (PSO) in MATLAB and Simulink.
 
-📌 System Description & Reference Model
+## 📌 System Description & Reference Model
 
-The dynamic model and physical parameters are adopted from the standard benchmark by the University of Michigan Control Tutorials for MATLAB & Simulink (CTMS):
+The dynamic model and physical parameters are adopted from the standard benchmark by the **University of Michigan Control Tutorials for MATLAB & Simulink (CTMS)**:
 
-Reference: CTMS - DC Motor Speed: Simulink Controller Design
+* **Reference:** [CTMS - DC Motor Speed: Simulink Controller Design](https://ctms.engin.umich.edu/CTMS/index.php?example=MotorSpeed&section=SimulinkControl)
 
 The electro-mechanical coupling is described by Kirchhoff's voltage law for the armature circuit and Newton's second law for the mechanical rotational assembly:
 
-$$V(t) = R \cdot i(t) + L \frac{di(t)}{dt} + K_e \cdot \omega(t)$$
+$$
+V(t) = R \cdot i(t) + L \frac{di(t)}{dt} + K_e \cdot \omega(t)
+$$
 
-$$J \frac{d\omega(t)}{dt} + b \cdot \omega(t) = K_t \cdot i(t) - T_L(t)$$
+$$
+J \frac{d\omega(t)}{dt} + b \cdot \omega(t) = K_t \cdot i(t) - T_L(t)
+$$
 
-Physical Model Parameters (CTMS Benchmark)
+### Physical Model Parameters (CTMS Benchmark)
 
-Parameter
+| Parameter | Symbol | Nominal Value | Unit | 
+| ----- | ----- | ----- | ----- | 
+| Moment of inertia of the rotor | $J$ | $0.01$ | $\text{kg}\cdot\text{m}^2$ | 
+| Motor viscous friction constant | $b$ | $0.1$ | $\text{N}\cdot\text{m}\cdot\text{s}$ | 
+| Electromotive force constant | $K_e$ | $0.01$ | $\text{V} / (\text{rad/s})$ | 
+| Motor torque constant | $K_t$ | $0.01$ | $\text{N}\cdot\text{m}/\text{A}$ | 
+| Electric armature resistance | $R$ | $1.0$ | $\Omega$ | 
+| Electric armature inductance | $L$ | $0.5$ | $\text{H}$ | 
 
-Symbol
-
-Nominal Value
-
-Unit
-
-Moment of inertia of the rotor
-
-$J$
-
-$0.01$
-
-$\text{kg}\cdot\text{m}^2$
-
-Motor viscous friction constant
-
-$b$
-
-$0.1$
-
-$\text{N}\cdot\text{m}\cdot\text{s}$
-
-Electromotive force constant
-
-$K_e$
-
-$0.01$
-
-$\text{V} / (\text{rad/s})$
-
-Motor torque constant
-
-$K_t$
-
-$0.01$
-
-$\text{N}\cdot\text{m}/\text{A}$
-
-Electric armature resistance
-
-$R$
-
-$1.0$
-
-$\Omega$
-
-Electric armature inductance
-
-$L$
-
-$0.5$
-
-$\text{H}$
-
-Transfer Function Derivation
+### Transfer Function Derivation
 
 Assuming zero load disturbance ($T_L(s) = 0$) and motor torque-back-EMF symmetry ($K = K_t = K_e$), the open-loop transfer function mapping input armature voltage $V(s)$ to angular rotor speed $\omega(s)$ is:
 
-$$P(s) = \frac{\omega(s)}{V(s)} = \frac{K}{(J s + b)(L s + R) + K^2}$$
+$$
+P(s) = \frac{\omega(s)}{V(s)} = \frac{K}{(J s + b)(L s + R) + K^2}
+$$
 
 Substituting the numerical parameters gives:
 
-$$P(s) = \frac{0.01}{0.005 s^2 + 0.06 s + 0.1001}$$
+$$
+P(s) = \frac{0.01}{0.005 s^2 + 0.06 s + 0.1001}
+$$
 
-🧩 Simulink Model Architecture
+## 🧩 Simulink Model Architecture
 
-The closed-loop simulation model (dc_motor_model_cost.slx) implements continuous feedback tracking with physical actuator limitations and real-time state logging:
+The closed-loop simulation model (`dc_motor_model_cost.slx`) implements continuous feedback tracking with physical actuator limitations and real-time state logging:
 
+```
 [ Step (r = 1.0) ] ---> (+) ---> [ PID Controller ] ---> [ Saturation (±24V) ] ---> [ DC Motor Plant ] ---> y(t) [Speed]
                          ^ (-)                                                                     |
                          |-------------------------------------------------------------------------|
 
+```
 
-(Optional visual): Place a screenshot of your Simulink model inside docs/simulink_model.png to render it below.
+> *(Optional visual)*: Place a screenshot of your Simulink model inside `docs/simulink_model.png` to render it below.
 
-Constituent Blocks & Functional Mechanics:
+### Constituent Blocks & Functional Mechanics:
 
-Reference Input (Step):
+1. **Reference Input (`Step`):**
 
-Supplies a unit step setpoint ($r(t) = 1.0\text{ rad/s}$) at $t = 0\text{ s}$ to evaluate step tracking, rise time, and settling characteristics.
+   * Supplies a unit step setpoint ($r(t) = 1.0\text{ rad/s}$) at $t = 0\text{ s}$ to evaluate step tracking, rise time, and settling characteristics.
 
-Error Summing Junction (Sum):
+2. **Error Summing Junction (`Sum`):**
 
-Computes the instantaneous velocity tracking error:
+   * Computes the instantaneous velocity tracking error:
+     
 
+     $$
+     e(t) = r(t) - y(t)
+     $$
 
-$$e(t) = r(t) - y(t)$$
+   * Routes $e(t)$ to the PID controller and streams it to the MATLAB workspace for integral cost evaluation.
 
-Routes $e(t)$ to the PID controller and streams it to the MATLAB workspace for integral cost evaluation.
+3. **Controller (`PID Controller`):**
 
-Controller (PID Controller):
+   * Implements the ideal parallel PID control law:
+     
 
-Implements the ideal parallel PID control law:
+     $$
+     u(t) = K_p \, e(t) + K_i \int_{0}^{t} e(\tau)\,d\tau + K_d \, \frac{de(t)}{dt}
+     $$
 
+   * The gains ($K_p, K_i, K_d$) are dynamically updated by the PSO algorithm via `assignin` into the MATLAB base workspace.
 
-$$u(t) = K_p \, e(t) + K_i \int_{0}^{t} e(\tau)\,d\tau + K_d \, \frac{de(t)}{dt}$$
+4. **Actuator Constraint (`Saturation`):**
 
-The gains ($K_p, K_i, K_d$) are dynamically updated by the PSO algorithm via assignin into the MATLAB base workspace.
+   * Restricts the commanded voltage to the physical power supply limits:
+     
 
-Actuator Constraint (Saturation):
+     $$
+     V_{armature} \in [-24\text{ V}, \, +24\text{ V}]
+     $$
 
-Restricts the commanded voltage to the physical power supply limits:
+   * **Engineering Relevance:** In unconstrained linear models, unguided optimizers can choose unrealistically high gains that demand hundreds of volts. The saturation block guarantees that solutions are physically realizable on realistic H-bridge hardware and penalizes windup-prone behaviors.
 
+5. **DC Motor Plant (`Continuous Transfer Function` or `State-Space Subsystem`):**
 
-$$V_{armature} \in [-24\text{ V}, \, +24\text{ V}]$$
+   * Simulates the combined electrical and mechanical dynamics of the plant according to parameters $J, b, K, R, L$.
 
-Engineering Relevance: In unconstrained linear models, unguided optimizers can choose unrealistically high gains that demand hundreds of volts. The saturation block guarantees that solutions are physically realizable on realistic H-bridge hardware and penalizes windup-prone behaviors.
+6. **Signal Loggers (`To Workspace`):**
 
-DC Motor Plant (Continuous Transfer Function or State-Space Subsystem):
+   * Configured in `Timeseries` format to capture:
 
-Simulates the combined electrical and mechanical dynamics of the plant according to parameters $J, b, K, R, L$.
+     * `e`: Error signal over simulation duration $T = 3\text{ s}$.
 
-Signal Loggers (To Workspace):
+     * `y`: Rotor velocity output trajectory.
 
-Configured in Timeseries format to capture:
+## 🎯 Cost Function Formulation
 
-e: Error signal over simulation duration $T = 3\text{ s}$.
+To balance rapid response time against excessive mechanical stress, the objective function combines the **Integral of Time-weighted Absolute Error (ITAE)** with a hard penalization for overshoot:
 
-y: Rotor velocity output trajectory.
+$$
+J(K_p, K_i, K_d) = \int_{0}^{T} t \cdot \vert{}e(t)\vert{} \, dt + 50 \cdot M_p
+$$
 
-🎯 Cost Function Formulation
+### Loss Component Breakdown:
 
-To balance rapid response time against excessive mechanical stress, the objective function combines the Integral of Time-weighted Absolute Error (ITAE) with a hard penalization for overshoot:
+* **ITAE Component (**$\int_{0}^{T} t \cdot \vert{}e(t)\vert{}\,dt$**):**
 
-$$J(K_p, K_i, K_d) = \int_{0}^{T} t \cdot \vert{}e(t)\vert{} \, dt + 50 \cdot M_p$$
+  * Early transient deviations (at small $t$) are permitted without heavy penalty, allowing the motor to accelerate.
 
-Loss Component Breakdown:
+  * Persistent tracking offsets or late-stage ringing are amplified linearly by $t$, driving steady-state error strictly to zero.
 
-ITAE Component ($\int_{0}^{T} t \cdot \vert{}e(t)\vert{}\,dt$):
+* **Overshoot Penalty (**$50 \cdot M_p$**):**
+  
 
-Early transient deviations (at small $t$) are permitted without heavy penalty, allowing the motor to accelerate.
+  $$
+  M_p = \max\Big(0, \, \max(y(t)) - 1.0\Big)
+  $$
 
-Persistent tracking offsets or late-stage ringing are amplified linearly by $t$, driving steady-state error strictly to zero.
+  * Without an explicit penalty, optimization algorithms often minimize ITAE by driving gains aggressively high, producing large overshoots.
 
-Overshoot Penalty ($50 \cdot M_p$):
+  * A scaling factor of $50$ heavily penalizes any trajectory exceeding the $1.0\text{ rad/s}$ setpoint, directing the swarm toward critically damped or non-overshooting profiles.
 
+## 🔍 Particle Swarm Optimization (PSO) Setup
 
-$$M_p = \max\Big(0, \, \max(y(t)) - 1.0\Big)$$
+The search space is explored using MATLAB's Global Optimization Toolbox routine `particleswarm`:
 
-Without an explicit penalty, optimization algorithms often minimize ITAE by driving gains aggressively high, producing large overshoots.
+| Hyperparameter | Value | Description | 
+| ----- | ----- | ----- | 
+| **Search Space Dimension** | 3 | $[K_p, K_i, K_d]$ | 
+| **Swarm Size** | 15 | Number of candidate parameter vectors evaluated per iteration | 
+| **Max Iterations** | 20 | Generation budget ceiling | 
+| **Lower Bounds (`lb`)** | `[0, 0, 0]` | Positivity requirement for controller stability | 
+| **Upper Bounds (`ub`)** | `[500, 300, 10]` | Practical hardware bounds preventing derivative noise amplification | 
 
-A scaling factor of $50$ heavily penalizes any trajectory exceeding the $1.0\text{ rad/s}$ setpoint, directing the swarm toward critically damped or non-overshooting profiles.
+## 📈 Optimization Results & Convergence
 
-🔍 Particle Swarm Optimization (PSO) Setup
+### Convergence History:
 
-The search space is explored using MATLAB's Global Optimization Toolbox routine particleswarm:
-
-Hyperparameter
-
-Value
-
-Description
-
-Search Space Dimension
-
-3
-
-$[K_p, K_i, K_d]$
-
-Swarm Size
-
-15
-
-Number of candidate parameter vectors evaluated per iteration
-
-Max Iterations
-
-20
-
-Generation budget ceiling
-
-Lower Bounds (lb)
-
-[0, 0, 0]
-
-Positivity requirement for controller stability
-
-Upper Bounds (ub)
-
-[500, 300, 10]
-
-Practical hardware bounds preventing derivative noise amplification
-
-📈 Optimization Results & Convergence
-
-Convergence History:
-
+```
                                  Best            Mean     Stall
 Iteration     f-count            f(x)            f(x)    Iterations
     0              15           1.003           5.713        0
@@ -224,57 +170,62 @@ Iteration     f-count            f(x)            f(x)    Iterations
    20             315         0.02962          0.2496        9
 Optimization ended: number of iterations exceeded OPTIONS.MaxIterations.
 
+```
 
-Optimal Controller Parameters:
+### Optimal Controller Parameters:
 
-Proportional Gain ($K_p$): 203.7924
+* **Proportional Gain (**$K_p$**):** `203.7924`
 
-Integral Gain ($K_i$): 46.6451
+* **Integral Gain (**$K_i$**):** `46.6451`
 
-Derivative Gain ($K_d$): 9.9838
+* **Derivative Gain (**$K_d$**):** `9.9838`
 
-Minimum Cost ($J_{min}$): 0.0296
+* **Minimum Cost (**$J_{min}$**):** `0.0296`
 
-Performance Observations:
+### Performance Observations:
 
-Zero Overshoot ($M_p = 0\%$): Suppressed by the overshoot penalty term ($50 \cdot M_p$).
+* **Zero Overshoot (**$M_p = 0\%$**):** Suppressed by the overshoot penalty term ($50 \cdot M_p$).
 
-Eliminated Steady-State Error: Convergence of $K_i \approx 46.65$ eliminates DC offset.
+* **Eliminated Steady-State Error:** Convergence of $K_i \approx 46.65$ eliminates DC offset.
 
-Rapid Settling: Reaches setpoint in under 0.5 seconds without exceeding saturation limits.
+* **Rapid Settling:** Reaches setpoint in under 0.5 seconds without exceeding saturation limits.
 
-📊 Velocity Response Plot
+## 📊 Velocity Response Plot
 
-(Optional visual): Save the generated response plot as docs/response_curve.png to display it here.
+> *(Optional visual)*: Save the generated response plot as `docs/response_curve.png` to display it here.
 
-📂 File Manifest
+## 📂 File Manifest
 
-run_pso_pid.m: Executable driver script setting plant parameters, launching particleswarm, and rendering the final step response.
+* `run_pso_pid.m`: Executable driver script setting plant parameters, launching `particleswarm`, and rendering the final step response.
 
-pid_cost.m: Objective function injecting candidate gains into the base workspace, executing sim, and computing the scalar loss $J$.
+* `pid_cost.m`: Objective function injecting candidate gains into the base workspace, executing `sim`, and computing the scalar loss $J$.
 
-dc_motor_model_cost.slx: Closed-loop Simulink plant and controller model with voltage saturation and signal export blocks.
+* `dc_motor_model_cost.slx`: Closed-loop Simulink plant and controller model with voltage saturation and signal export blocks.
 
-README.md: Technical documentation for this benchmark.
+* `README.md`: Technical documentation for this benchmark.
 
-🚀 How to Run
+## 🚀 How to Run
 
-Open MATLAB and navigate to this directory:
+1. Open MATLAB and navigate to this directory:
 
-cd('01_DC_Motor_Speed_PID_PSO');
+   ```
+   cd('01_DC_Motor_Speed_PID_PSO');
+   
+   ```
 
+2. Confirm that `dc_motor_model_cost.slx` and `pid_cost.m` are in the current working directory.
 
-Confirm that dc_motor_model_cost.slx and pid_cost.m are in the current working directory.
+3. Execute the driver script:
 
-Execute the driver script:
+   ```
+   run_pso_pid
+   
+   ```
 
-run_pso_pid
+4. Inspect the printed parameters and the resulting closed-loop step response figure.
 
+## 📚 References
 
-Inspect the printed parameters and the resulting closed-loop step response figure.
+* Messner, W., Tilbury, D., et al. *"Control Tutorials for MATLAB & Simulink (CTMS) - DC Motor Speed: Simulink Controller Design"*, University of Michigan & Carnegie Mellon University.
 
-📚 References
-
-Messner, W., Tilbury, D., et al. "Control Tutorials for MATLAB & Simulink (CTMS) - DC Motor Speed: Simulink Controller Design", University of Michigan & Carnegie Mellon University.
-
-Available at: https://ctms.engin.umich.edu/CTMS/index.php?example=MotorSpeed&section=SimulinkControl
+  Available at: <https://ctms.engin.umich.edu/CTMS/index.php?example=MotorSpeed&section=SimulinkControl>
