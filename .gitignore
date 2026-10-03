@@ -1,0 +1,12 @@
+# MATLAB temporary, autosave, and workspace files
+*.asv
+*.m~
+*.mat
+*.fig
+
+# Simulink cache and code generation directories
+*.slxc
+slprj/
+
+# Crash dumps and logs
+matlab_crash_dump.*
